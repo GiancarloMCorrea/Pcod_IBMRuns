@@ -59,6 +59,8 @@ plot_data_8 = list()
 plot_data_9 = list()
 plot_data_10 = list()
 plot_data_11 = list()
+plot_data_12 = list()
+plot_data_13 = list()
 indList = 1
 
 for(i in seq_along(cores)) {
@@ -76,38 +78,38 @@ for(i in seq_along(cores)) {
                          FUN = function(x) mean(x))
     num_dataYSL = num_data[num_data$stage == 'YSL', ]
     num_dataYSL$hatsuc = num_dataYSL$number/ini_number
-    plot_data_1[[indList]] = data_summary(num_dataYSL, varname = "hatsuc", groupnames = c("year"))
+    plot_data_1[[indList]] = num_dataYSL
     
     # Prepare data for plot 2: Survival 30 dph
     tmpData$ageYSLround = round(tmpData$ageYSL)
     survData = tmpData[tmpData$ageYSLround == 30, ]
-    surv_data = aggregate(x = list(psurv = survData$psurvival), list(year = survData$year, id = survData$id), 
+    surv_data = aggregate(x = list(psurv = survData$psurvival), list(year = survData$year, id = survData$id),
                           FUN = mean, na.rm = TRUE)
-    plot_data_2[[indList]] = data_summary(surv_data, varname = "psurv", groupnames = c("year"))
+    plot_data_2[[indList]] = surv_data
     
     # Prepare data for plot 3: diet rank
-    rank_data = aggregate(x = list(rank = tmpData$grSL), list(year = tmpData$year, stage = tmpData$typeName, id = tmpData$id), 
+    rank_data = aggregate(x = list(rank = tmpData$avgRank), list(year = tmpData$year, stage = tmpData$typeName, id = tmpData$id), 
                           FUN = mean, na.rm=TRUE)
     rank_data = rank_data[!(rank_data$stage %in% c('YSL')), ] # exclude YSL and benthicjuv stage
-    plot_data_3[[indList]] = data_summary(rank_data, varname = "rank", groupnames = c("year", 'stage'))
+    plot_data_3[[indList]] = rank_data
 
     
     # Prepare data for plot 4: diet size
-    size_data = aggregate(x = list(sized = tmpData$grDW), list(year = tmpData$year, stage = tmpData$typeName, id = tmpData$id), 
+    size_data = aggregate(x = list(sized = tmpData$avgSize), list(year = tmpData$year, stage = tmpData$typeName, id = tmpData$id), 
                           FUN = mean, na.rm=TRUE)
     size_data = size_data[!(size_data$stage %in% c('YSL')), ] # exclude YSL and benthicjuv stage
-    plot_data_4[[indList]] = data_summary(size_data, varname = "sized", groupnames = c("year", 'stage'))
+    plot_data_4[[indList]] = size_data
     
     # Prepare data for plot 5: DW
     epijuvData = tmpData[tmpData$typeName == 'Epijuv', ]
     wgt_data = aggregate(x = list(dw = epijuvData$DW), list(year = epijuvData$year, id = epijuvData$id), 
                          FUN = max, na.rm=TRUE)
-    plot_data_5[[indList]] = data_summary(wgt_data, varname = "dw", groupnames = c("year"))
+    plot_data_5[[indList]] = wgt_data
     
     # Prepare data for plot 6: SL
     sl_data = aggregate(x = list(sl = epijuvData$SL), list(year = epijuvData$year, id = epijuvData$id), 
                         FUN = max, na.rm=TRUE)
-    plot_data_6[[indList]] = data_summary(sl_data, varname = "sl", groupnames = c("year"))
+    plot_data_6[[indList]] = sl_data
     
     # Prepare data for plot 7: final points map
     epijuvData$last_day = paste0(day(epijuvData$time), '-', month(epijuvData$time))
@@ -120,7 +122,7 @@ for(i in seq_along(cores)) {
                          list(year = stageData$year, id = stageData$id), 
                          FUN = mean, na.rm=TRUE)
     int_data = gather(env_data, key = "variable", value = "value", temperature, pCO2)
-    plot_data_8[[indList]] = data_summary(int_data, varname = "value", groupnames = c("year", 'variable'))
+    plot_data_8[[indList]] = int_data
     
     # Prepare data for plot 9: prey abundance
     prey_data = aggregate(x = list(copepods = stageData$copepod, microzoo = stageData$microzoo, 
@@ -130,7 +132,7 @@ for(i in seq_along(cores)) {
                           FUN = mean, na.rm=TRUE)
     int_data = gather(prey_data, key = "variable", value = "value",
                       copepods, microzoo, neocalanus, neocalanusShelf, euphausiids, euphausiidsShelf)
-    plot_data_9[[indList]] = data_summary(int_data, varname = "value", groupnames = c("year", 'variable'))
+    plot_data_9[[indList]] = int_data
     
     
     # These plots are based on release day:
@@ -145,17 +147,69 @@ for(i in seq_along(cores)) {
     
     # Prepare data for plot 11: survival 30dph by release day
     survData$relDay = lubridate::day(survData$startTime)
-    surv_data = aggregate(x = list(psurv = survData$psurvival), list(relDay = survData$relDay, id = survData$id, 
-                                                                     year = survData$year), 
+    surv_data = aggregate(x = list(psurv = survData$psurvival), 
+                          list(relDay = survData$relDay, id = survData$id, year = survData$year),
                           FUN = mean, na.rm = TRUE)
     plot_data_11[[indList]] = surv_data
     
+      # Prepare data for plot 12: SL by release day
+    epijuvData = tmpData[tmpData$typeName == 'Epijuv', ]
+    epijuvData$relDay = lubridate::day(epijuvData$startTime)
+    sl_data = aggregate(x = list(sl = epijuvData$SL), list(relDay = epijuvData$relDay, 
+                                                            id = epijuvData$id), 
+                         FUN = max, na.rm=TRUE)
+    plot_data_12[[indList]] = sl_data
+    
+    # Prepare data for plot 13: DW by release day
+    wgt_data = aggregate(x = list(dw = epijuvData$DW), list(relDay = epijuvData$relDay, 
+                                                            id = epijuvData$id), 
+                         FUN = max, na.rm=TRUE)
+    plot_data_13[[indList]] = wgt_data
+        
     # Get to next indicator:
     indList = indList + 1
     
   }
   
 }
+
+
+# -------------------------------------------------------------------------
+# Analyze survival data here: (some changes needed)
+indList = 1
+mort_data = list()
+
+for(i in seq_along(cores)) {
+  
+  core_name = cores[i]
+  files_core = list.files(path = file.path(main_folder, core_name))
+  fcore = grep(pattern = 'Results_files', 
+               x = list.files(path = file.path(main_folder, core_name)))
+  
+  for(j in seq_along(fcore)) {
+    
+    tmpData = read_data_in(eggInclude = FALSE, 
+                           path = file.path(main_folder, core_name, files_core[fcore[j]]))
+    tmpData$ageYSLround = round(tmpData$ageYSL)
+    myData = tmpData[(tmpData$ageYSLround <= 30) & (tmpData$progYSA >= 1 | is.na(tmpData$progYSA)), ]
+    myData = myData[which(myData$mortstarv < 10), ]
+
+    myData1 = aggregate(list(mortfish = myData$mortfish, mortinv = myData$mortinv,
+                             mortstarv = myData$mortstarv), 
+                        list(year = myData$year, id = myData$id),
+                        mean)
+    myData2 = myData1[,-2]
+    myData3 = myData2 %>% 
+                gather('type', 'value', -year)
+    
+    mort_data[[indList]] = myData3
+    indList = indList + 1
+      
+  }
+    
+}
+  
+
 
 # Analyze BY YEAR ---------------------------------------------------------
 # -------------------------------------------------------------------------
@@ -166,13 +220,15 @@ plot_data = bind_rows(plot_data_1, .id = "column_label")
 plot_data$year = as.factor(plot_data$year)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = hatsuc)) + 
-  geom_pointrange(aes(ymin = hatsuc-sd, ymax=hatsuc+sd)) +
+pl1 = ggplot(plot_data, aes(x = year, y = hatsuc)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
-  ylab('Hatching success')
+  ylab('Hatching success') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  
 
-ggsave(filename = 'figures/hind_hatchsuccess.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_hatchsuccess.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
 
 
 # Plot 2: Survival 30 days --------------------------------------------------------
@@ -181,14 +237,31 @@ plot_data = bind_rows(plot_data_2, .id = "column_label")
 plot_data$year = as.factor(plot_data$year)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = psurv)) + 
-  geom_pointrange(aes(ymin = psurv-sd, ymax=psurv+sd)) +
+pl2 = ggplot(plot_data, aes(x = year, y = psurv)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
-  ylab('Survival probability (30 dph)')
+  ylab('Survival probability (30 dph)') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 
-ggsave(filename = 'figures/hind_survprob.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_survprob.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
 
+
+# Plot 2.2: survival rate by category -------------------------------------
+plot_data = bind_rows(mort_data, .id = "column_label")
+plot_data$year = as.factor(plot_data$year)
+plot_data$type = factor(plot_data$type, levels = c("mortfish", "mortinv", "mortstarv"))
+plot_data$type = factor(plot_data$type, labels = c('Fish predation', 'Invertebrate predation', 'Starvation'))
+
+ggplot(plot_data, aes(x = year, y = value)) +
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
+  theme_bw() +
+  xlab('') +
+  ylab('Mortality (1e+6)') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  facet_wrap(~type, ncol = 3, scales = 'free_y')
+
+ggsave(filename = 'figures/hind_mort.png', device = 'png', width = 190, height = 70, units = 'mm', dpi = 500)
 
 # Plot 3: Changes rank in diet ---------------------------------------------------------
 
@@ -197,16 +270,16 @@ plot_data$year = as.factor(plot_data$year)
 plot_data$stage = as.factor(plot_data$stage)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = rank)) + 
-  geom_pointrange(aes(ymin = rank-sd, ymax=rank+sd)) +
+pd1 = ggplot(plot_data, aes(x = year, y = rank)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
-  ylab('Prey rank') +
-  scale_y_reverse(limits = c(6, 1)) +
+  ylab('Prey preference') +
+  scale_y_reverse(limits = c(6, 1), breaks = 1:6, labels = c('EupO', 'EupS', 'NCaS', 'NCaO', 'Cop', 'MZP')) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   facet_grid(~stage)
 
-ggsave(filename = 'figures/hind_dietrank.png', device = 'png', width = 180, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_dietrank.png', device = 'png', width = 180, height = 75, units = 'mm', dpi = 500)
 
 
 # Plot 4: Changes size in diet ---------------------------------------------------------
@@ -216,15 +289,21 @@ plot_data$year = as.factor(plot_data$year)
 plot_data$stage = as.factor(plot_data$stage)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = sized)) + 
-  geom_pointrange(aes(ymin = sized-sd, ymax=sized+sd)) +
+pd2 = ggplot(plot_data, aes(x = year, y = sized)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
   ylab('Prey size (mm)') +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   facet_wrap(~stage, scales = 'free_y')
 
-ggsave(filename = 'figures/hind_dietsize.png', device = 'png', width = 180, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_dietsize.png', device = 'png', width = 180, height = 75, units = 'mm', dpi = 500)
+
+# Prey figure:
+png(filename = 'figures/hind_preyfig.png', width = 190, height = 130, 
+    units = 'mm', res = 500)
+grid.arrange(pd1, pd2)
+dev.off()
 
 # Plot 5: Changes in DW ----------------------------------------------------------
 
@@ -232,13 +311,14 @@ plot_data = bind_rows(plot_data_5, .id = "column_label")
 plot_data$year = as.factor(plot_data$year)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = dw)) + 
-  geom_pointrange(aes(ymin = dw-sd, ymax=dw+sd)) +
+pl4 = ggplot(plot_data, aes(x = year, y = dw)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
-  ylab('Dry weight (mg)')
+  ylab('Dry weight (mg)') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 
-ggsave(filename = 'figures/hind_dryw.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_dryw.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
 
 # Plot 6: Changes in SL ----------------------------------------------------------
 
@@ -246,13 +326,20 @@ plot_data = bind_rows(plot_data_6, .id = "column_label")
 plot_data$year = as.factor(plot_data$year)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = sl)) + 
-  geom_pointrange(aes(ymin = sl-sd, ymax=sl+sd)) +
+pl3 = ggplot(plot_data, aes(x = year, y = sl)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
-  ylab('Standard length (mm)')
+  ylab('Standard length (mm)') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) 
 
-ggsave(filename = 'figures/hind_stdlen.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_stdlen.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+
+# Prey figure:
+png(filename = 'figures/hind_indfig.png', width = 190, height = 130, 
+    units = 'mm', res = 500)
+grid.arrange(pl1, pl2, pl3, pl4)
+dev.off()
 
 
 # Plot 7: Map final points -------------------------------------------------
@@ -273,17 +360,17 @@ plot_data$variable2 = factor(plot_data$variable, labels = c("Temperature~(C)", '
 
 # Plot:
 ggplot(plot_data, aes(x = year, y = value)) + 
-  geom_pointrange(aes(ymin = value-sd, ymax=value+sd)) +
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab(NULL) +
   ylab(NULL) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   facet_wrap(. ~ variable2, scales = 'free_y', strip.position = "left", 
-             labeller = label_parsed) +
+             labeller = label_parsed, ncol = 1) +
   theme(strip.background = element_blank(),
         strip.placement = "outside")
 
-ggsave(filename = 'figures/hind_envvar.png', device = 'png', width = 180, height = 90, units = 'mm', dpi = 500)
+ggsave(filename = 'figures/hind_envvar.png', device = 'png', width = 95, height = 150, units = 'mm', dpi = 500)
 
 
 # Plot 9: prey data -------------------------------------------------------
@@ -295,11 +382,11 @@ plot_data$variable = factor(plot_data$variable, levels = c("euphausiids",
                                                            "neocalanus", "copepods", "microzoo"))
 plot_data$variable2 = factor(plot_data$variable, labels = c("EupO~(mg~C/m^3)",
                                                             "EupS~(mg~C/m^3)", "NCaS~(mg~C/m^3)", 
-                                                            "NCaO~(mg~C/m^3)", "Cop~(mg~C/m^3)", "Microzooplankton~(mg~C/m^3)"))
+                                                            "NCaO~(mg~C/m^3)", "Cop~(mg~C/m^3)", "MZP~(mg~C/m^3)"))
 
 # Plot:
 ggplot(plot_data, aes(x = year, y = value)) + 
-  geom_pointrange(aes(ymin = value-sd, ymax=value+sd)) +
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab(NULL) +
   ylab(NULL) +
@@ -322,14 +409,15 @@ plot_data = data_summary(plot_data, varname = "hatsuc", groupnames = c("relDay")
 plot_data$relDay = as.factor(plot_data$relDay)
 
 # Plot:
-ggplot(plot_data, aes(x = relDay, y = hatsuc)) + 
+pr1 = ggplot(plot_data, aes(x = relDay, y = hatsuc)) + 
   geom_pointrange(aes(ymin = hatsuc-sd, ymax=hatsuc+sd)) +
+  scale_x_discrete(labels = c('01/03', '15/03', '31/03')) +
   theme_bw() +
   xlab('') +
   ylab('Hatching success')
 
 
-ggsave(filename = 'figures/hind_relday_hatchsuccess.png', device = 'png', width = 180, height = 120, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_relday_hatchsuccess.png', device = 'png', width = 180, height = 120, units = 'mm', dpi = 500)
 
 
 # Plot 11: Survival 30 days --------------------------------------------------------
@@ -339,14 +427,53 @@ plot_data = data_summary(plot_data, varname = "psurv", groupnames = c("relDay"))
 plot_data$relDay = as.factor(plot_data$relDay)
 
 # Plot:
-ggplot(plot_data, aes(x = relDay, y = psurv)) + 
+pr2 = ggplot(plot_data, aes(x = relDay, y = psurv)) + 
   geom_pointrange(aes(ymin = psurv-sd, ymax=psurv+sd)) +
+  scale_x_discrete(labels = c('01/03', '15/03', '31/03')) +
   theme_bw() +
   xlab('') +
   ylab('Survival probability (30 dph)')
 
-ggsave(filename = 'figures/hind_relday_survprob.png', device = 'png', width = 180, height = 120, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_relday_survprob.png', device = 'png', width = 180, height = 120, units = 'mm', dpi = 500)
 
+# Plot 12: SL --------------------------------------------------------
+
+plot_data = bind_rows(plot_data_12, .id = "column_label")
+plot_data = data_summary(plot_data, varname = "sl", groupnames = c("relDay"))
+plot_data$relDay = as.factor(plot_data$relDay)
+
+# Plot:
+pr3 = ggplot(plot_data, aes(x = relDay, y = sl)) + 
+  geom_pointrange(aes(ymin = sl-sd, ymax=sl+sd)) +
+  scale_x_discrete(labels = c('01/03', '15/03', '31/03')) +
+  theme_bw() +
+  xlab('') +
+  ylab('Standard length (mm)')
+
+# ggsave(filename = 'figures/hind_relday_survprob.png', device = 'png', width = 180, height = 120, units = 'mm', dpi = 500)
+
+# Plot 13: DW --------------------------------------------------------
+
+plot_data = bind_rows(plot_data_13, .id = "column_label")
+plot_data = data_summary(plot_data, varname = "dw", groupnames = c("relDay"))
+plot_data$relDay = as.factor(plot_data$relDay)
+
+# Plot:
+pr4 = ggplot(plot_data, aes(x = relDay, y = dw)) + 
+  geom_pointrange(aes(ymin = dw-sd, ymax=dw+sd)) +
+  scale_x_discrete(labels = c('01/03', '15/03', '31/03')) +
+  theme_bw() +
+  xlab('') +
+  ylab('Dry weight (mg)')
+
+# ggsave(filename = 'figures/hind_relday_survprob.png', device = 'png', width = 180, height = 120, units = 'mm', dpi = 500)
+
+
+# Release day figure:
+png(filename = 'figures/hind_reldayfig.png', width = 190, height = 130, 
+    units = 'mm', res = 500)
+grid.arrange(pr1, pr2, pr3, pr4)
+dev.off()
 
 
 # -------------------------------------------------------------------------
@@ -390,31 +517,7 @@ for(i in seq_along(cores)) {
     # Find initial and final points
     init_points = tmpData[tmpData[ , .I[which.min(time)], by = id]$V1]
 
-    plotList[[indList]] = ggplot() + 
-                    country_shapes +
-                    geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
-                                 breaks = c(-50, -100, -200),
-                                 colour = "gray80", size = 0.25, alpha = 0.5) +
-                    geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
-                                 breaks = c(-50, -100, -200),
-                                 colour = "gray80", size = 0.25, alpha = 0.5) +
-                    geom_path(data = tmpData, aes(x = horizPos1, y = horizPos2, group = factor(id)), 
-                              color = 'black', alpha = 0.3) +
-                    # geom_point(data = init_points, aes(x = horizPos1, y = horizPos2), color = 'blue', alpha = 0.2) +
-                    # geom_point(data = end_points, aes(x = horizPos1, y = horizPos2), color = 'red', alpha = 0.3) +
-                    coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +
-                    scale_x_continuous(breaks = c(175, 185, 195, 205), 
-                                       labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
-                    scale_y_continuous(breaks = c(52, 56, 60, 64), 
-                                       labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
-                    xlab(NULL) +
-                    ylab(NULL) +
-                    theme_bw() +
-                    annotate('text', x = 205, y =65, label= unique(init_points$year)[1], hjust=1, size = 3) +
-                    theme(panel.grid.major = element_blank(),
-                          panel.grid.minor = element_blank(),
-                          axis.line = element_line(size = 0.5, linetype = "solid",
-                                                   colour = "black")) 
+    plotList[[indList]] = plot_trajectory(tmpData)
     
     indList = indList+1
      
@@ -424,9 +527,9 @@ for(i in seq_along(cores)) {
 
 # Plot trajectories: 
 
-plotList2 = plotList[c(1,3,5,7,9,2,4,6,8,10)] # reorder list by year
+plotList2 = plotList[c(1,5,8,2,6,9,3,7,10,4)] # reorder list by year
 
-png(filename = 'figures/hind_trajectories.png', width = 180, height = 200, 
+png(filename = 'figures/hind_trajectories.png', width = 190, height = 200, 
     units = 'mm', res = 500)
 do.call("grid.arrange", c(plotList2, ncol = 3))
 dev.off()
@@ -499,17 +602,19 @@ for(i in seq_along(cores)) {
 
 dist_data = bind_rows(distdat, .id = "column_label")
 dist_data$dist = dist_data$dist*1.852 # from nm to km
-plot_data = data_summary(dist_data, varname = "dist", groupnames = c("year"))
+plot_data = dist_data
 plot_data$year = as.factor(plot_data$year)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = dist)) + 
-  geom_pointrange(aes(ymin = dist-sd, ymax=dist+sd)) +
+ps2 = ggplot(plot_data, aes(x = year, y = dist)) + 
+  geom_boxplot(fill='gray90', color="black", width=0.5, lwd = 0.25, outlier.size = 0.3) +
   theme_bw() +
   xlab('') +
-  ylab('Distance (km)')
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab('Distance (km)') +
+  annotate("text",  x=Inf, y = Inf, label = "B", vjust=1, hjust=1, size = 5)
 
-ggsave(filename = 'figures/hind_disttrav.png', device = 'png', width = 180, height = 90, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_disttrav.png', device = 'png', width = 180, height = 90, units = 'mm', dpi = 500)
 
 
 # Plot center gravity (final) per year
@@ -519,32 +624,9 @@ init_dat = data.frame(cgx = unique(cgdata$CG_x_ini)[1], cgy = unique(cgdata$CG_y
 plot_data = aggregate(list(cgx = cgdata$CG_x_end, cgy = cgdata$CG_y_end), list(year = cgdata$year), mean)
 plot_data$year = as.factor(plot_data$year)
 
-ggplot() + 
-  country_shapes +
-  geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
-               breaks = c(-50, -100, -200),
-               colour = "gray80", size = 0.25, alpha = 0.5) +
-  geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
-               breaks = c(-50, -100, -200),
-               colour = "gray80", size = 0.25, alpha = 0.3) +
-  geom_segment(data = plot_data, aes(x = init_dat$cgx, y = init_dat$cgy, xend = cgx, yend = cgy),
-               arrow = arrow(length = unit(0.1, "cm")), alpha = 0.3)  +
-  coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +
-  scale_x_continuous(breaks = c(175, 185, 195, 205), 
-                     labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
-  scale_y_continuous(breaks = c(52, 56, 60, 64), 
-                     labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
-  annotate('text', x = plot_data$cgx, y = plot_data$cgy, label= plot_data$year, hjust = 0.5, vjust = -0.5, size = 1.5) +
-  #scale_color_manual(values = wes_palette("Darjeeling1", n = 10, type = 'continuous')) +
-  xlab(NULL) +
-  ylab(NULL) +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.line = element_line(size = 0.5, linetype = "solid",
-                                 colour = "black")) 
-
-ggsave(filename = 'figures/hind_direction.png', device = 'png', width = 100, height = 90, units = 'mm', dpi = 500)
+ps1 = plot_direction(plot_data, init_dat)
+ps1 = ps1 + annotate("text",  x=Inf, y = Inf, label = "A", vjust=1, hjust=1, size = 5)
+# ggsave(filename = 'figures/hind_direction.png', device = 'png', width = 100, height = 70, units = 'mm', dpi = 500)
 
 
 # Plot inertia per year:
@@ -555,10 +637,19 @@ plot_data$diffInertia = ((plot_data$inertiaEnd - plot_data$inertiaIni)/plot_data
 plot_data$year = as.factor(plot_data$year)
 
 # Plot:
-ggplot(plot_data, aes(x = year, y = diffInertia)) + 
+ps3 = ggplot(plot_data, aes(x = year, y = diffInertia)) + 
   geom_bar(stat = 'identity') +
   theme_bw() +
   xlab('') +
-  ylab('Difference in inertia (%)')
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab('Difference in inertia (%)') +
+  annotate("text",  x=Inf, y = Inf, label = "C", vjust=1, hjust=1, size = 5)
 
-ggsave(filename = 'figures/hind_inertia.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+# ggsave(filename = 'figures/hind_inertia.png', device = 'png', width = 100, height = 75, units = 'mm', dpi = 500)
+
+png(filename = 'figures/hind_spatialind.png', width = 190, height = 70, 
+    units = 'mm', res = 500)
+grid.arrange(ps1, ps2, ps3, nrow = 1)
+dev.off()
+
+

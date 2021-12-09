@@ -366,7 +366,7 @@ plot_initial_locations = function(initData) {
   geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy), 										   
                breaks = c(-50, -100, -200),
                colour = "gray80", size = 0.25) +
-  geom_point(data = initData, aes(x = horiz_pos_1, y = horiz_pos_2), color = 'blue') +
+  geom_point(data = initData, aes(x = horiz_pos_1, y = horiz_pos_2), color = 'blue', size = 0.5) +
   coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +
   scale_x_continuous(breaks = c(175, 185, 195, 205), 
                      labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
@@ -586,4 +586,186 @@ function(x = long, y = lat, z = NA, w = NA, modproj = NA, mlong = NA,
       Imin = NA, Iso = NA, xaxe1 = NA, yaxe1 = NA, xaxe2 = NA, yaxe2 = NA)
   }
   res
+}
+
+
+plot_direction = function(plot_data, init_dat) {
+
+  shift_value_1 <- 0
+  shift_value_2 <- 360
+
+  map_world_df <- map_data('world', wrap=c(shift_value_1, shift_value_2)) %>%
+    dplyr::filter(region != "Antarctica")
+
+  country_shapes <-  geom_polygon(data = map_world_df, 
+                                  aes(x=long, y = lat, group = group),
+                                  fill = "gainsboro",
+                                  color = "gainsboro",
+                                  size = 0.15)
+
+nYears = length(unique(plot_data$year))
+myColPal = colorRamps::blue2red(n = nYears)
+
+  g2 = ggplot() + 
+  country_shapes +
+  geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.5) +
+  geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.3) +
+  geom_segment(data = plot_data, aes(x = init_dat$cgx, y = init_dat$cgy, xend = cgx, 
+                                     yend = cgy, color = factor(year)),
+               arrow = arrow(length = unit(0.1, "cm")))  +
+  coord_cartesian(xlim = c(183, 200), ylim = c(55, 60)) +
+  scale_x_continuous(breaks = c(175, 185, 195, 205), 
+                     labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
+  scale_y_continuous(breaks = c(52, 56, 60, 64), 
+                     labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
+  scale_colour_manual(values = myColPal, name = NULL) +
+  xlab(NULL) +
+  ylab(NULL) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid",
+                                 colour = "black"),
+        legend.position = c(0.8, 0.3),
+        legend.text = element_text(size = 7),
+        legend.key.size = unit(0.25, 'cm'),
+        #legend.direction="horizontal",
+        legend.background = element_rect(fill = "transparent")) 
+
+  return(g2)
+
+}
+
+
+plot_cg = function(plot_data, init_dat, mainPal) {
+
+  shift_value_1 <- 0
+  shift_value_2 <- 360
+
+  map_world_df <- map_data('world', wrap=c(shift_value_1, shift_value_2)) %>%
+    dplyr::filter(region != "Antarctica")
+
+  country_shapes <-  geom_polygon(data = map_world_df, 
+                                  aes(x=long, y = lat, group = group),
+                                  fill = "gainsboro",
+                                  color = "gainsboro",
+                                  size = 0.15)
+
+  g2 = ggplot() + 
+  country_shapes +
+  geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.5) +
+  geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.3) +
+  geom_point(data = plot_data, aes(x = cgx, y = cgy, colour = scenario), shape = 3, alpha = 0.25)  +
+  geom_point(data = init_dat, aes(x = cgx, y = cgy), colour = 'black', shape = 17)  +
+  coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +  
+  scale_x_continuous(breaks = c(175, 185, 195, 205), 
+                     labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
+  scale_y_continuous(breaks = c(52, 56, 60, 64), 
+                     labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
+  scale_color_brewer(palette = mainPal) +
+  xlab(NULL) +
+  ylab(NULL) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid",
+                                 colour = "black"),
+        legend.position = 'none') 
+
+  return(g2)
+
+}
+
+plot_anomalies = function(plot_data) {
+
+  shift_value_1 <- 0
+  shift_value_2 <- 360
+
+  map_world_df <- map_data('world', wrap=c(shift_value_1, shift_value_2)) %>%
+    dplyr::filter(region != "Antarctica")
+
+  country_shapes <-  geom_polygon(data = map_world_df, 
+                                  aes(x=long, y = lat, group = group),
+                                  fill = "gainsboro",
+                                  color = "gainsboro",
+                                  size = 0.15)
+
+  g2 = ggplot() + 
+  country_shapes +
+  geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.5) +
+  geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.3) +
+  geom_point(data = plot_data, aes(x = lon, y = lat, colour = value))  +
+  coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +  
+  scale_x_continuous(breaks = c(175, 185, 195, 205), 
+                     labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
+  scale_y_continuous(breaks = c(52, 56, 60, 64), 
+                     labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
+  scale_colour_gradientn(colours = colorspace::diverge_hcl(7)) +
+  xlab(NULL) +
+  ylab(NULL) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid",
+                                 colour = "black"),
+        legend.position = 'none') 
+
+  return(g2)
+
+}
+
+
+
+plot_trajectory = function(plot_data) {
+
+  shift_value_1 <- 0
+  shift_value_2 <- 360
+
+  map_world_df <- map_data('world', wrap=c(shift_value_1, shift_value_2)) %>%
+    dplyr::filter(region != "Antarctica")
+
+  country_shapes <-  geom_polygon(data = map_world_df, 
+                                  aes(x=long, y = lat, group = group),
+                                  fill = "gainsboro",
+                                  color = "gainsboro",
+                                  size = 0.15)
+
+  p2 = ggplot() + 
+                    country_shapes +
+                    geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
+                                 breaks = c(-50, -100, -200),
+                                 colour = "gray80", size = 0.25, alpha = 0.5) +
+                    geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
+                                 breaks = c(-50, -100, -200),
+                                 colour = "gray80", size = 0.25, alpha = 0.5) +
+                    geom_path(data = plot_data, aes(x = horizPos1, y = horizPos2, group = factor(id)), 
+                              color = 'black', alpha = 0.3) +
+                    coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +
+                    scale_x_continuous(breaks = c(175, 185, 195, 205), 
+                                       labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
+                    scale_y_continuous(breaks = c(52, 56, 60, 64), 
+                                       labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
+                    xlab(NULL) +
+                    ylab(NULL) +
+                    theme_bw() +
+                    annotate('text', x = 205, y =63, label= unique(plot_data$year)[1], hjust=1, size = 4) +
+                    theme(panel.grid.major = element_blank(),
+                          panel.grid.minor = element_blank(),
+                          axis.line = element_line(size = 0.5, linetype = "solid",
+                                                   colour = "black")) 
+    
+    return(p2)
+
 }
