@@ -8,8 +8,8 @@ fixed_date = ymd_hms('1900-01-01 00:00:00')
 
 # Parameters --------------------------------------------------------------
 # Specify years to run in each core:
-year_vec = 2008:2010
-scenario = 'GFDL_rcp85'
+year_vec = 2100
+scenario = 'GFDL_rcp45'
 
 # Forecast period ---------------------------------------------------------
 

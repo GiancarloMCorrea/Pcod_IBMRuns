@@ -355,8 +355,8 @@ plot_initial_locations = function(initData) {
                                   size = 0.15)
 
   # change longitude values:
-  initData$horiz_pos_1 = ifelse(test = initData$horiz_pos_1 > 0, yes = initData$horiz_pos_1 - 360, no = initData$horiz_pos_1)
-  initData$horiz_pos_1 = initData$horiz_pos_1 + 360
+  initData$horizPos1 = ifelse(test = initData$horizPos1 > 0, yes = initData$horizPos1 - 360, no = initData$horizPos1)
+  initData$horizPos1 = initData$horizPos1 + 360
 
   p1 = ggplot() + 
   country_shapes +
@@ -366,7 +366,7 @@ plot_initial_locations = function(initData) {
   geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy), 										   
                breaks = c(-50, -100, -200),
                colour = "gray80", size = 0.25) +
-  geom_point(data = initData, aes(x = horiz_pos_1, y = horiz_pos_2), color = 'blue', size = 0.5) +
+  geom_point(data = initData, aes(x = horizPos1, y = horizPos2), color = 'black', size = 0.5) +
   coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +
   scale_x_continuous(breaks = c(175, 185, 195, 205), 
                      labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
@@ -684,7 +684,7 @@ plot_cg = function(plot_data, init_dat, mainPal) {
 
 }
 
-plot_anomalies = function(plot_data) {
+plot_map_var = function(plot_data, legTitle = 'Slope', palFun, mainTitle = '', ...) {
 
   shift_value_1 <- 0
   shift_value_2 <- 360
@@ -706,13 +706,14 @@ plot_anomalies = function(plot_data) {
   geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
                breaks = c(-50, -100, -200),
                colour = "gray80", size = 0.25, alpha = 0.3) +
-  geom_point(data = plot_data, aes(x = lon, y = lat, colour = value))  +
+  geom_point(data = plot_data, aes(x = lon, y = lat, colour = var), size = 0.75)  +
   coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +  
   scale_x_continuous(breaks = c(175, 185, 195, 205), 
                      labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
   scale_y_continuous(breaks = c(52, 56, 60, 64), 
                      labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
-  scale_colour_gradientn(colours = colorspace::diverge_hcl(7)) +
+  scale_colour_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  #scale_colour_gradientn(colours = colorspace::diverge_hcl(7)) +
   xlab(NULL) +
   ylab(NULL) +
   theme_bw() +
@@ -720,7 +721,103 @@ plot_anomalies = function(plot_data) {
         panel.grid.minor = element_blank(),
         axis.line = element_line(size = 0.5, linetype = "solid",
                                  colour = "black"),
-        legend.position = 'none') 
+        legend.background = element_rect(fill = "transparent"),
+        legend.position = c(0.14,0.35)) +
+  guides(color = guide_colourbar(title = legTitle, barwidth = 0.75)) +
+  annotate(geom = 'text', label = mainTitle, x = -Inf, y = Inf, hjust = 0, vjust = 1, ...)
+
+  return(g2)
+
+}
+
+
+plot_map_var2 = function(plot_data, legTitle = 'Slope', palFun, mainTitle = '', ...) {
+
+  shift_value_1 <- 0
+  shift_value_2 <- 360
+
+  map_world_df <- map_data('world', wrap=c(shift_value_1, shift_value_2)) %>%
+    dplyr::filter(region != "Antarctica")
+
+  country_shapes <-  geom_polygon(data = map_world_df, 
+                                  aes(x=long, y = lat, group = group),
+                                  fill = "gainsboro",
+                                  color = "gainsboro",
+                                  size = 0.15)
+
+  g2 = ggplot() + 
+  country_shapes +
+  geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.5) +
+  geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.3) +
+  geom_point(data = plot_data, aes(x = lon, y = lat, colour = var), size = 0.75)  +
+  coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +  
+  scale_x_continuous(breaks = c(175, 185, 195, 205), 
+                     labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
+  scale_y_continuous(breaks = c(52, 56, 60, 64), 
+                     labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
+  scale_color_gradientn(colours = rev(brewer.pal(9,'RdYlBu')), ...) +
+  xlab(NULL) +
+  ylab(NULL) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid",
+                                 colour = "black"),
+        legend.background = element_rect(fill = "transparent"),
+        legend.position = c(0.14,0.35)) +
+  guides(color = guide_colourbar(title = legTitle, barwidth = 0.75)) +
+  annotate(geom = 'text', label = mainTitle, x = -Inf, y = Inf, hjust = 0, vjust = 1)
+
+  return(g2)
+
+}
+
+
+plot_map_2d_density = function(plot_data, palFun, ...) {
+
+  shift_value_1 <- 0
+  shift_value_2 <- 360
+
+  map_world_df <- map_data('world', wrap=c(shift_value_1, shift_value_2)) %>%
+    dplyr::filter(region != "Antarctica")
+
+  country_shapes <-  geom_polygon(data = map_world_df, 
+                                  aes(x=long, y = lat, group = group),
+                                  fill = "gainsboro",
+                                  color = "gainsboro",
+                                  size = 0.15)
+
+  g2 = ggplot() + 
+  country_shapes +
+  geom_contour(data = bathy1, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.5) +
+  geom_contour(data = bathy2, aes(x = lon, y = lat, z = bathy),
+               breaks = c(-50, -100, -200),
+               colour = "gray80", size = 0.25, alpha = 0.3) +
+  stat_density_2d(aes(x = horizPos1, y = horizPos2, fill = stat(level)), alpha = .25,
+                 geom = "polygon", data = plot_data,
+                        n = 250 ,
+                        bins = 20, show.legend = FALSE) +
+  coord_cartesian(xlim = c(170, 205), ylim = c(51, 65)) +  
+  scale_x_continuous(breaks = c(175, 185, 195, 205), 
+                     labels = c('175\u00B0E', '175\u00B0W', '165\u00B0W', '155\u00B0W')) +
+  scale_y_continuous(breaks = c(52, 56, 60, 64), 
+                     labels = c('52\u00B0N', '56\u00B0N', '60\u00B0N', '64\u00B0N')) +
+  scale_fill_gradientn(colours = alpha(colour = musculusColors::musculus_palette("Bmlunge", n=50),alpha = 0.3)) +
+  xlab(NULL) +
+  ylab(NULL) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid",
+                                 colour = "black"),
+        legend.position = 'none') +
+  facet_wrap(~period, ncol = 1)
 
   return(g2)
 
